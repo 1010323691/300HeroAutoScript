@@ -1,0 +1,19 @@
+# 构建产物（python build.py 生成）
+toolkit/
+build/
+dist/
+300HeroAuto.exe
+
+# 运行时文件
+config.json
+log/
+__pycache__/
+stardust/stardust_log.txt
+stardust/stop.flag
+stardust/running.flag
+stardust/captures/unexpected.png
+history.json
+recordings/
+recorder/stop.flag
+recorder/running.flag
+recorder/__pycache__/

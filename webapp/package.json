@@ -1,0 +1,7 @@
+{
+  "name": "300hero-auto-ui",
+  "productName": "300英雄 自动脚本",
+  "version": "1.1.0",
+  "private": true,
+  "main": "main.js"
+}

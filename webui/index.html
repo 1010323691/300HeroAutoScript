@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>300英雄 自动脚本</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app" id="app">
+  <!-- ==================== 侧栏 ==================== -->
+  <aside class="sidebar">
+    <div class="brand drag">
+      <svg class="logo" viewBox="0 0 40 40" aria-hidden="true">
+        <defs>
+          <linearGradient id="lgA" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#3461ff"/><stop offset="1" stop-color="#5aa0ff"/></linearGradient>
+          <linearGradient id="lgB" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#7a5af8"/><stop offset="1" stop-color="#c084fc"/></linearGradient>
+        </defs>
+        <path d="M5 29c4-1 6-5 9-10s6-9 10-9 6 3 7 7" fill="none" stroke="url(#lgA)" stroke-width="6" stroke-linecap="round"/>
+        <path d="M15 31c4 0 6-3 8-7s5-7 9-7 4 2 4 4" fill="none" stroke="url(#lgB)" stroke-width="5.5" stroke-linecap="round" opacity=".92"/>
+      </svg>
+      <div class="brand-text"><b>300英雄 自动脚本</b><span>Automation Studio</span></div>
+    </div>
+
+    <nav class="nav" aria-label="主导航">
+      <div class="nav-label">脚本</div>
+      <button class="nav-item active" data-page="home" title="星屑占卜"><i data-ic="star"></i><span>星屑占卜</span><em class="nav-badge run" id="tagBot" hidden>运行中</em></button>
+      <button class="nav-item" data-page="record" title="操作录制"><i data-ic="video"></i><span>操作录制</span><em class="nav-badge rec" id="tagRec" hidden>录制中</em></button>
+      <div class="nav-label">数据</div>
+      <button class="nav-item" data-page="history" title="运行记录"><i data-ic="chart"></i><span>运行记录</span></button>
+    </nav>
+
+    <div class="nav-bottom">
+      <nav class="nav"><button class="nav-item" data-page="settings" title="设置"><i data-ic="gear"></i><span>设置</span></button></nav>
+      <div class="conn" id="gameCard" title="正在查找游戏窗口…">
+        <span class="conn-ic"><i data-ic="gamepad"></i></span>
+        <div class="conn-text"><b>300英雄</b><small id="gcSub">正在查找游戏…</small></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==================== 主区 ==================== -->
+  <div class="main">
+    <header class="topbar drag">
+      <div class="page-title"><h1 id="pageTitle">星屑占卜</h1><span id="pageSub"></span></div>
+      <div class="search nodrag" id="searchBox">
+        <i data-ic="search"></i>
+        <input id="searchInput" placeholder="搜索功能或页面…" autocomplete="off" spellcheck="false">
+        <kbd>Ctrl K</kbd>
+        <div class="menu search-menu" id="searchMenu"></div>
+      </div>
+      <div class="top-icons nodrag">
+        <button class="icon-btn" id="compactBtn" title="迷你模式：缩成贴在屏幕右侧的小窗"><i data-ic="dock"></i></button>
+        <div class="menu-wrap">
+          <button class="icon-btn" id="bellBtn" title="通知"><i data-ic="bell"></i><span class="dot-red" id="bellDot" hidden></span></button>
+          <div class="menu notify-menu right" id="notifyMenu">
+            <div class="menu-head">通知<span class="grow"></span><button class="link-btn" id="notifyClear">清空</button></div>
+            <div class="notify-list" id="notifyList"></div>
+          </div>
+        </div>
+        <button class="icon-btn" id="helpBtn" title="使用说明"><i data-ic="help"></i></button>
+      </div>
+      <div class="winctl nodrag">
+        <button data-win="min" title="最小化"><i data-ic="min"></i></button>
+        <button data-win="max" title="最大化"><i data-ic="max"></i></button>
+        <button data-win="close" class="close" title="关闭"><i data-ic="x"></i></button>
+      </div>
+    </header>
+
+    <main class="panel">
+      <!-- ============ 星屑占卜 ============ -->
+      <section class="page page-split active" id="page-home">
+        <div class="console">
+          <div class="console-body">
+            <div class="block">
+              <div class="status-row"><span id="rStatus"><em class="status idle">未运行</em></span><span class="grow"></span><span class="timer dim" id="rTimer">0:00</span></div>
+              <div class="status-meta" id="rMeta">尚未运行</div>
+              <div class="stats">
+                <div class="stat"><b id="iGames">0</b><span>完成局数</span></div>
+                <div class="stat gold"><b id="iDust">0</b><span>获得星砂</span></div>
+                <div class="stat"><b id="iAvg">—</b><span>平均每局</span></div>
+              </div>
+            </div>
+
+            <div class="block">
+              <div class="live">
+                <div class="board idle" id="board" aria-label="星盘"></div>
+                <ol class="steps" id="steps"></ol>
+              </div>
+              <div class="caption" id="iStep">等待启动</div>
+            </div>
+
+            <div class="block">
+              <div class="block-head"><h3>运行配置</h3><span class="saved" data-saved><i data-ic="check"></i>已保存</span></div>
+              <div class="field"><label>运行局数</label>
+                <div class="seg" id="cfgGames" data-opts="games"></div>
+              </div>
+              <div class="field"><label>点击等待</label>
+                <div><div class="stepper" data-stepper="cfgTimeout"><button data-step="-1" title="减少"><i data-ic="minus"></i></button><input id="cfgTimeout" type="number" min="1" max="60" step="1"><span>秒</span><button data-step="1" title="增加"><i data-ic="plus"></i></button></div></div>
+              </div>
+              <div class="field"><label>完成后</label>
+                <div class="seg" id="cfgClose" data-opts="close"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="console-foot">
+            <div class="split-btn" id="runSplit">
+              <button class="sb-main" id="runBig"><i data-ic="play"></i><span>运行脚本</span></button>
+              <button class="sb-drop" data-menu="runMenu" title="更多运行方式"><i data-ic="chevron"></i></button>
+              <div class="menu up run-menu" id="runMenu">
+                <button data-run="one"><i data-ic="play"></i><span class="mi">只运行 1 局<small>不改变上面的配置</small></span></button>
+                <button data-run="nav"><i data-ic="compass"></i><span class="mi">只打开星屑占卜页<small>导航到页面后停下，不占卜</small></span></button>
+              </div>
+            </div>
+            <div class="foot-hint" id="runHint"><span class="dot"></span><span>正在检测游戏…</span></div>
+          </div>
+        </div>
+
+        <div class="work">
+          <div class="tabbar" data-tabs="home" role="tablist">
+            <button class="tab active" data-tab="log">运行日志</button>
+            <button class="tab" data-tab="runs">运行记录<em class="count" id="runsCount">0</em></button>
+            <button class="tab" data-tab="strategy">策略说明</button>
+          </div>
+
+          <!-- 运行日志 -->
+          <div class="tab-panel active" data-panel="home-log">
+            <div class="toolbar">
+              <label class="input"><i data-ic="search"></i><input id="logSearch" placeholder="搜索日志…" spellcheck="false"></label>
+              <select id="logLevel" title="按级别筛选"><option value="">全部级别</option><option value="info">信息</option><option value="success">成功</option><option value="warn">警告</option><option value="error">错误</option></select>
+              <select id="logRange" title="范围"><option value="all">全部日志</option><option value="last">本次运行</option></select>
+              <span class="grow"></span>
+              <button class="btn ghost" id="logExport" title="导出为 txt"><i data-ic="download"></i><span class="bl">导出</span></button>
+              <button class="btn ghost danger-hover" id="logClear" title="清空界面中的日志"><i data-ic="trash"></i><span class="bl">清空</span></button>
+              <div class="menu-wrap">
+                <button class="btn ghost icon" data-menu="moreMenu" title="更多"><i data-ic="more"></i></button>
+                <div class="menu right" id="moreMenu">
+                  <button data-open="log"><i data-ic="filetext"></i><span class="mi">打开日志文件<small>stardust_log.txt</small></span></button>
+                  <button data-open="captures"><i data-ic="image"></i>异常截图</button>
+                  <button data-open="folder"><i data-ic="folder"></i>程序目录</button>
+                  <div class="menu-sep"></div>
+                  <button data-action="help"><i data-ic="help"></i>使用说明</button>
+                </div>
+              </div>
+            </div>
+            <div class="log" id="logBody"></div>
+          </div>
+
+          <!-- 运行记录 -->
+          <div class="tab-panel" data-panel="home-runs">
+            <div class="toolbar">
+              <div class="meta">累计运行 <b id="metaRuns">0</b> 次<i class="vsep"></i>累计星砂 <b class="gold" id="metaDust">0</b><i class="vsep"></i>上次运行 <b id="metaLast">—</b></div>
+              <span class="grow"></span>
+              <button class="btn ghost" data-goto="history"><i data-ic="chart"></i>查看统计</button>
+            </div>
+            <div class="gtable runs-table">
+              <div class="gthead"><span>开始时间</span><span>状态</span><span class="r">局数</span><span class="r">星砂</span><span class="c-dur">耗时</span><span>每局结果 / 备注</span></div>
+              <div class="gtbody" id="runsBody"></div>
+            </div>
+          </div>
+
+          <!-- 策略说明 -->
+          <div class="tab-panel" data-panel="home-strategy">
+            <div class="doc">
+              <h3>玩法</h3>
+              <p>3×3 星盘随机放入 1–9，系统先翻开 1 格；玩家再翻开 3 格（共 4 格可见），最后选择一条线（3 行 / 3 列 / 2 条对角线），三个数之和换取星砂。</p>
+              <h3>奖励表 <span class="note" style="font-weight:400;font-size:12px">线和 → 星砂</span></h3>
+              <div class="pay-grid" id="payGrid"></div>
+              <div class="legend"><span><i style="background:var(--gold)"></i>500 星砂</span><span><i style="background:var(--primary)"></i>100–150 星砂</span><span><i style="background:#c4cad4"></i>10–50 星砂</span></div>
+              <h3>最优策略</h3>
+              <p>脚本对所有可能的排列做精确期望值计算：每一步都选择期望星砂最高的格子或线路，平均约 <b>178 星砂 / 局</b>。奖励两头高、中间低，所以脚本会优先追求极端的和（6–7 或 23–24）。</p>
+              <h3>安全措施</h3>
+              <p>每次点击后都会确认界面发生了预期变化，网络卡顿时自动等待或重试；运行期间游戏窗口临时置顶，结束后恢复。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 操作录制 ============ -->
+      <section class="page page-split" id="page-record">
+        <div class="console">
+          <div class="console-body">
+            <div class="block">
+              <div class="status-row"><span id="recStatus"><em class="status idle">未录制</em></span><span class="grow"></span><span class="note" style="font-size:12px">按 <kbd>F10</kbd> 停止</span></div>
+              <div class="viewfinder" id="vf">
+                <div class="vf-top"><span class="vf-rec" id="vfRec">STANDBY</span><span class="grow"></span><span id="vfRes">—</span></div>
+                <div class="vf-time" id="recTimer">00:00</div>
+                <div class="vf-bottom"><span id="vfFps">8 FPS</span><span class="grow"></span><span id="vfKeys">KEYS ON</span></div>
+              </div>
+              <div class="stats">
+                <div class="stat"><b id="recClicks">0</b><span>点击</span></div>
+                <div class="stat"><b id="recKeysN">0</b><span>按键</span></div>
+                <div class="stat"><b class="sm" id="recStart">—</b><span>开始时间</span></div>
+              </div>
+              <div class="kv">
+                <div><label>输出目录</label><button class="link-btn" id="recOut" disabled>—</button></div>
+              </div>
+            </div>
+
+            <div class="block">
+              <div class="block-head"><h3>录制配置</h3><span class="saved" data-saved><i data-ic="check"></i>已保存</span></div>
+              <div class="field"><label>帧率</label>
+                <div class="seg" id="recFps" data-opts="fps"></div>
+              </div>
+              <div class="field-note" id="recFpsNote">每秒 8 帧，画面与文件大小均衡</div>
+              <div class="field"><label>键盘按键</label>
+                <label class="switch"><input type="checkbox" id="recKeys"><span id="recKeysText">记录</span></label>
+              </div>
+              <div class="field"><label>录制范围</label><span class="static"><i data-ic="monitor"></i>仅游戏窗口</span></div>
+            </div>
+          </div>
+
+          <div class="console-foot">
+            <div class="split-btn ink" id="recSplit">
+              <button class="sb-main" id="recBig"><i data-ic="recdot"></i><span>开始录制</span></button>
+            </div>
+            <div class="foot-hint" id="recHint"><span class="dot"></span><span>正在检测游戏…</span></div>
+          </div>
+        </div>
+
+        <div class="work">
+          <div class="tabbar" data-tabs="record" role="tablist">
+            <button class="tab active" data-tab="list">录像列表<em class="count" id="recCount">0</em></button>
+            <button class="tab" data-tab="log">录制日志</button>
+            <button class="tab" data-tab="format">输出说明</button>
+          </div>
+          <div class="tab-panel active" data-panel="record-list">
+            <div class="toolbar">
+              <div class="meta">共 <b id="recMetaCount">0</b> 个录像<i class="vsep"></i>占用 <b id="recMetaSize">0 KB</b></div>
+              <span class="grow"></span>
+              <button class="btn ghost" data-open="recordings"><i data-ic="folder"></i>录像目录</button>
+            </div>
+            <div class="gtable rec-table">
+              <div class="gthead"><span>开始时间</span><span>时长</span><span class="r">点击</span><span class="r">按键</span><span class="c-size r">大小</span><span class="r">操作</span></div>
+              <div class="gtbody" id="recBody"></div>
+            </div>
+          </div>
+          <div class="tab-panel" data-panel="record-log">
+            <div class="log" id="recLogBody" style="padding-top:12px"></div>
+          </div>
+          <div class="tab-panel" data-panel="record-format">
+            <div class="doc">
+              <h3>保存位置</h3>
+              <p>每次录制保存在 <code>recordings/&lt;时间&gt;/</code>：</p>
+              <table class="doc-table">
+                <tr><td><code>steps.md</code></td><td>给 agent 读的步骤清单：每次点击的时间、位置（窗口内比例坐标，与分辨率无关）、点击前/后截图</td></tr>
+                <tr><td><code>events.jsonl</code></td><td>全部事件：点击、按键、暂停/恢复、窗口被遮挡，每行一个 JSON</td></tr>
+                <tr><td><code>frames/</code></td><td><code>0001_before.jpg</code> 点击前一刻（红圈为点击位置）/ <code>0001_after.jpg</code> 点击约 0.8 秒后</td></tr>
+                <tr><td><code>video.mp4</code></td><td>整段视频（点击处有红圈），用 Windows 媒体播放器或 VLC 观看</td></tr>
+                <tr><td><code>meta.json</code></td><td>时长、帧率、窗口大小、点击/按键次数</td></tr>
+              </table>
+              <h3>注意</h3>
+              <p>只记录点在游戏窗口里的点击和游戏在前台时的按键；自动脚本的点击会标注“脚本”。按键包括聊天输入，分享录像前请注意画面里的聊天和账号名。游戏窗口被其他窗口挡住时，录到的是挡在前面的窗口。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 运行记录 ============ -->
+      <section class="page page-scroll" id="page-history">
+        <div class="kpis" id="kpis"></div>
+        <div class="hist-grid">
+          <div class="sect">
+            <div class="sect-head"><h3>每日星砂</h3><span>近 14 天</span></div>
+            <div id="chart"></div>
+          </div>
+          <div class="sect">
+            <div class="sect-head"><h3>单局结果分布</h3><span id="distTotal"></span></div>
+            <div class="dist" id="dist"></div>
+          </div>
+        </div>
+        <div class="table-sect">
+          <div class="sect-head"><h3>全部记录</h3><span id="hMetaCount">0 条</span><span class="grow"></span><button class="btn ghost danger-hover" id="clearHist"><i data-ic="trash"></i>清空记录</button></div>
+          <div class="gtable runs-table">
+            <div class="gthead"><span>开始时间</span><span>状态</span><span class="r">局数</span><span class="r">星砂</span><span class="c-dur">耗时</span><span>每局结果 / 备注</span></div>
+            <div class="gtbody" id="histBody"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 设置 ============ -->
+      <section class="page" id="page-settings">
+        <div class="settings"><div class="settings-inner">
+          <div class="set-group">
+            <h2><i data-ic="star"></i>星屑占卜<span class="grow"></span><span class="saved" data-saved><i data-ic="check"></i>已保存</span></h2>
+            <p>修改后自动保存，下次运行生效；与「星屑占卜」页的运行配置同步。</p>
+            <div class="set-row"><div class="sr-text"><b>运行局数</b><small>“全部”会把今天剩余的占卜次数用完</small></div>
+              <div class="sr-ctl"><div class="seg" id="sGames" data-opts="games"></div></div></div>
+            <div class="set-row"><div class="sr-text"><b>点击响应等待</b><small>每次点击后等待界面变化的秒数；网络差、点击常常没反应时调大</small></div>
+              <div class="sr-ctl"><div class="stepper wide" data-stepper="sTimeout"><button data-step="-1" title="减少"><i data-ic="minus"></i></button><input id="sTimeout" type="number" min="1" max="60" step="1"><span>秒</span><button data-step="1" title="增加"><i data-ic="plus"></i></button></div></div></div>
+            <div class="set-row"><div class="sr-text"><b>完成后</b><small>占卜次数用完或达到局数后的去向</small></div>
+              <div class="sr-ctl"><div class="seg" id="sClose" data-opts="close"></div></div></div>
+          </div>
+
+          <div class="set-group">
+            <h2><i data-ic="video"></i>操作录制</h2>
+            <p>录制游戏窗口画面、点击和按键，用于生成给 agent 学习的步骤清单。</p>
+            <div class="set-row"><div class="sr-text"><b>帧率</b><small>帧率越高视频越流畅，文件也越大</small></div>
+              <div class="sr-ctl"><div class="seg" id="sRecFps" data-opts="fps"></div></div></div>
+            <div class="set-row"><div class="sr-text"><b>记录键盘按键</b><small>包括聊天输入；分享录像前注意画面里的聊天和账号名</small></div>
+              <div class="sr-ctl"><label class="switch"><input type="checkbox" id="sRecKeys"></label></div></div>
+          </div>
+
+          <div class="set-group">
+            <h2><i data-ic="folder"></i>文件与目录</h2>
+            <p>出问题时可以把这些文件发给开发者排查。</p>
+            <div class="set-row"><div class="sr-text"><b>脚本日志</b><small><code>stardust/stardust_log.txt</code></small></div><div class="sr-ctl"><button class="btn" data-open="log"><i data-ic="external"></i>打开</button></div></div>
+            <div class="set-row"><div class="sr-text"><b>异常截图</b><small>脚本异常停止时的游戏画面 <code>stardust/captures/</code></small></div><div class="sr-ctl"><button class="btn" data-open="captures"><i data-ic="image"></i>打开</button></div></div>
+            <div class="set-row"><div class="sr-text"><b>录像目录</b><small><code>recordings/</code></small></div><div class="sr-ctl"><button class="btn" data-open="recordings"><i data-ic="video"></i>打开</button></div></div>
+            <div class="set-row"><div class="sr-text"><b>程序目录</b><small>界面服务日志在 <code>log/gui.txt</code>，运行记录在 <code>history.json</code></small></div><div class="sr-ctl"><button class="btn" data-open="folder"><i data-ic="folder"></i>打开</button></div></div>
+          </div>
+
+          <div class="set-group">
+            <h2><i data-ic="keyboard"></i>快捷键</h2>
+            <div class="keys">
+              <div><kbd>F12</kbd>立即停止脚本（任何界面）</div>
+              <div><kbd>F10</kbd>停止录制</div>
+              <div><kbd>Ctrl</kbd><kbd>K</kbd>搜索功能或页面</div>
+            </div>
+          </div>
+
+          <div class="set-group">
+            <h2><i data-ic="info"></i>关于</h2>
+            <div class="about">
+              <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><path d="M5 29c4-1 6-5 9-10s6-9 10-9 6 3 7 7" fill="none" stroke="#3461ff" stroke-width="6" stroke-linecap="round"/><path d="M15 31c4 0 6-3 8-7s5-7 9-7 4 2 4 4" fill="none" stroke="#7a5af8" stroke-width="5.5" stroke-linecap="round"/></svg>
+              <div class="grow"><b>300英雄 自动脚本</b><small>版本 1.1.0 · 星屑占卜 · 操作录制</small></div>
+              <button class="btn" data-action="help"><i data-ic="help"></i>使用说明</button>
+            </div>
+          </div>
+        </div></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- ==================== 迷你模式 ==================== -->
+<div class="mini" id="mini">
+  <div class="mini-top drag">
+    <svg class="logo sm" viewBox="0 0 40 40" aria-hidden="true"><path d="M5 29c4-1 6-5 9-10s6-9 10-9 6 3 7 7" fill="none" stroke="#3461ff" stroke-width="6" stroke-linecap="round"/><path d="M15 31c4 0 6-3 8-7s5-7 9-7 4 2 4 4" fill="none" stroke="#7a5af8" stroke-width="5.5" stroke-linecap="round"/></svg>
+    <b>星屑占卜</b>
+    <span class="grow"></span>
+    <button class="nodrag icon-btn" id="expandBtn" title="还原完整窗口"><i data-ic="expand"></i></button>
+    <button class="nodrag icon-btn close" data-win="close" title="关闭"><i data-ic="x"></i></button>
+  </div>
+  <div class="mini-panel">
+    <div class="mini-head">
+      <div class="status-row"><span id="miniStatus"><em class="status idle">未运行</em></span><span class="grow"></span><span class="timer dim" id="miniTime">0:00</span></div>
+      <div class="mini-live">
+        <div class="board idle" id="miniBoard"></div>
+        <div class="mini-nums">
+          <div><span>完成局数</span><b id="miniGames">0</b></div>
+          <div class="gold"><span>获得星砂</span><b id="miniDust">0</b></div>
+          <div><span>平均每局</span><b id="miniAvg">—</b></div>
+        </div>
+      </div>
+      <div class="mini-step" id="miniStep">等待启动</div>
+      <div class="split-btn mini-run" id="miniSplit"><button class="sb-main" id="miniRun"><i data-ic="play"></i><span>运行脚本</span></button></div>
+    </div>
+    <div class="mini-log-head">运行日志</div>
+    <div class="mini-log" id="miniLog"></div>
+  </div>
+  <div class="mini-foot"><span class="dot" id="miniGameDot"></span><span id="miniGameText">检测游戏中…</span></div>
+</div>
+
+<!-- ==================== 使用说明 ==================== -->
+<div class="modal" id="helpModal" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="modal-head"><b id="helpTitle">使用说明</b><span class="grow"></span><button class="icon-btn" id="helpClose" title="关闭"><i data-ic="x"></i></button></div>
+    <div class="modal-body"><div class="doc" id="helpModalBody"></div></div>
+  </div>
+</div>
+
+<!-- ==================== 确认框 ==================== -->
+<div class="modal" id="confirmModal" hidden>
+  <div class="modal-box confirm-box" role="alertdialog" aria-modal="true">
+    <div class="cf-head"><span class="cf-ic"><i data-ic="trash"></i></span><div><b id="cfTitle"></b><p id="cfBody"></p></div></div>
+    <div class="cf-acts"><button class="btn" id="cfCancel">取消</button><button class="btn danger" id="cfOk">确定</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
+</html>

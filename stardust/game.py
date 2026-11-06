@@ -49,6 +49,46 @@ def find_game_hwnd():
     return result[0]
 
 
+_k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+_adv = ctypes.WinDLL("advapi32", use_last_error=True)
+_k32.OpenProcess.restype = wt.HANDLE
+_k32.OpenProcess.argtypes = [wt.DWORD, wt.BOOL, wt.DWORD]
+_k32.GetCurrentProcess.restype = wt.HANDLE
+_k32.CloseHandle.argtypes = [wt.HANDLE]
+_adv.OpenProcessToken.argtypes = [wt.HANDLE, wt.DWORD, ctypes.POINTER(wt.HANDLE)]
+_adv.GetTokenInformation.argtypes = [wt.HANDLE, ctypes.c_int, ctypes.c_void_p, wt.DWORD, ctypes.POINTER(wt.DWORD)]
+
+
+def _elevated(proc_handle):
+    """令牌是否为提升权限（管理员）。无权读取对方令牌说明对方权限比我们高，按 True 处理。"""
+    tok = wt.HANDLE()
+    if not _adv.OpenProcessToken(proc_handle, 0x0008, ctypes.byref(tok)):   # TOKEN_QUERY
+        return ctypes.get_last_error() == 5                                 # ERROR_ACCESS_DENIED
+    try:
+        v, n = wt.DWORD(), wt.DWORD()
+        ok = _adv.GetTokenInformation(tok, 20, ctypes.byref(v), 4, ctypes.byref(n))   # TokenElevation
+        return bool(ok and v.value)
+    finally:
+        _k32.CloseHandle(tok)
+
+
+def input_blocked(hwnd):
+    """游戏以管理员身份运行而本程序没有时，Windows（UIPI）会丢弃我们发给游戏的鼠标点击。"""
+    pid = wt.DWORD()
+    user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+    h = _k32.OpenProcess(0x1000, False, pid.value)          # PROCESS_QUERY_LIMITED_INFORMATION
+    if not h:
+        return False
+    try:
+        return _elevated(h) and not _elevated(_k32.GetCurrentProcess())
+    finally:
+        _k32.CloseHandle(h)
+
+
+ADMIN_HINT = ("游戏以管理员身份运行，Windows 会拦截本程序发给游戏的点击。"
+              "请关闭本程序后右键 300HeroAuto.exe 选择“以管理员身份运行”，或以普通方式重新启动游戏")
+
+
 def client_rect(hwnd):
     """客户区在屏幕上的 (left, top, width, height)，物理像素。"""
     r = wt.RECT()

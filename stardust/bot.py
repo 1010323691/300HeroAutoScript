@@ -97,6 +97,8 @@ class Bot:
     def __init__(self, dry_run=False):
         self.dry = dry_run
         self.hwnd = game.find_game_hwnd()
+        if not dry_run and game.input_blocked(self.hwnd):
+            raise RuntimeError(game.ADMIN_HINT)        # 否则每次点击都被系统丢弃，只会反复“无响应”
         self.frame = None
 
     # ---- 观察 ----

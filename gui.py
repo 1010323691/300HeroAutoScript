@@ -412,10 +412,14 @@ def game_status():
         h = game.find_game_hwnd()
     except Exception:
         return {"found": False}
+    try:
+        admin = game.input_blocked(h)                   # 游戏是管理员权限而我们不是：点击会被系统拦截
+    except Exception:
+        admin = False
     if game.user32.IsIconic(h):
-        return {"found": True, "minimized": True}
+        return {"found": True, "minimized": True, "admin": admin}
     x, y, w, hh = game.client_rect(h)
-    return {"found": True, "minimized": False, "width": w, "height": hh}
+    return {"found": True, "minimized": False, "width": w, "height": hh, "admin": admin}
 
 
 # ---------------- HTTP ----------------

@@ -485,6 +485,7 @@ function renderRunHint() {
   const set = (el, cls, html) => { el.className = "foot-hint" + (cls ? " " + cls : ""); el.innerHTML = `<span class="dot"></span><span>${html}</span>`; };
   const g = gameInfo;
   const gameHTML = !g ? ["", "正在检测游戏…"] : !g.found ? ["bad", "未检测到游戏：请先启动 300英雄 并登录到大厅"]
+    : g.admin ? ["bad", "游戏以管理员身份运行，点击会被拦截：请以管理员身份运行本程序"]
     : g.minimized ? ["warn", "游戏已最小化，运行时会自动还原"] : ["ok", `游戏已连接 · 窗口 ${g.width}×${g.height}`];
   set($("#runHint"), ...(running ? ["run", "运行中请勿操作鼠标 · 按 <kbd>F12</kbd> 立即停止"] : gameHTML));
   const recOn = recState && (recState.running || recState.status === "stopping");
@@ -748,11 +749,12 @@ async function pollGame() {
     const g = await api("game");
     gameInfo = g;
     const card = $("#gameCard");
-    card.className = "conn " + (!g.found ? "bad" : g.minimized ? "warn" : "ok");
-    $("#gcSub").textContent = !g.found ? "未启动" : g.minimized ? "已最小化 · 运行时自动还原" : `已连接 · ${g.width}×${g.height}`;
-    card.title = !g.found ? "请先启动 300英雄 并登录到大厅" : "已找到 300英雄 窗口";
-    $("#miniGameDot").className = "dot " + (!g.found ? "bad" : g.minimized ? "warn" : "ok");
-    $("#miniGameText").textContent = !g.found ? "游戏未启动" : g.minimized ? "游戏已最小化" : `游戏已连接 · ${g.width}×${g.height}`;
+    const tone = !g.found || g.admin ? "bad" : g.minimized ? "warn" : "ok";
+    card.className = "conn " + tone;
+    $("#gcSub").textContent = !g.found ? "未启动" : g.admin ? "管理员权限 · 点击会被拦截" : g.minimized ? "已最小化 · 运行时自动还原" : `已连接 · ${g.width}×${g.height}`;
+    card.title = !g.found ? "请先启动 300英雄 并登录到大厅" : g.admin ? "游戏以管理员身份运行：请右键 300HeroAuto.exe 选择“以管理员身份运行”" : "已找到 300英雄 窗口";
+    $("#miniGameDot").className = "dot " + tone;
+    $("#miniGameText").textContent = !g.found ? "游戏未启动" : g.admin ? "游戏是管理员权限，点击会被拦截" : g.minimized ? "游戏已最小化" : `游戏已连接 · ${g.width}×${g.height}`;
     renderRunHint();
     renderViewfinder();
   } catch (e) { }
